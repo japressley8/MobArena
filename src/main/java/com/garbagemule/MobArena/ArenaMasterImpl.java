@@ -1,15 +1,17 @@
 package com.garbagemule.MobArena;
 
-import static com.garbagemule.MobArena.util.config.ConfigUtils.makeSection;
-import static com.garbagemule.MobArena.util.config.ConfigUtils.parseLocation;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
-import com.garbagemule.MobArena.framework.Arena;
-import com.garbagemule.MobArena.framework.ArenaMaster;
-import com.garbagemule.MobArena.things.InvalidThingInputString;
-import com.garbagemule.MobArena.things.Thing;
-import com.garbagemule.MobArena.util.JoinInterruptTimer;
-import com.garbagemule.MobArena.util.Slugs;
-import com.garbagemule.MobArena.util.config.ConfigUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -20,16 +22,15 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
+import com.garbagemule.MobArena.framework.Arena;
+import com.garbagemule.MobArena.framework.ArenaMaster;
+import com.garbagemule.MobArena.things.InvalidThingInputString;
+import com.garbagemule.MobArena.things.Thing;
+import com.garbagemule.MobArena.util.JoinInterruptTimer;
+import com.garbagemule.MobArena.util.Slugs;
+import com.garbagemule.MobArena.util.config.ConfigUtils;
+import static com.garbagemule.MobArena.util.config.ConfigUtils.makeSection;
+import static com.garbagemule.MobArena.util.config.ConfigUtils.parseLocation;
 
 public class ArenaMasterImpl implements ArenaMaster
 {
@@ -106,11 +107,35 @@ public class ArenaMasterImpl implements ArenaMaster
     }
 
     public void addPlayer(Player p, Arena arena) {
+        if (p == null || arena == null) {
+            return;
+        }
+
+        UUID uuid = p.getUniqueId();
+        for (Player key : new ArrayList<>(arenaMap.keySet())) {
+            if (key != null && !key.equals(p) && key.getUniqueId().equals(uuid)) {
+                arenaMap.remove(key);
+            }
+        }
+
         arenaMap.put(p, arena);
     }
 
     public Arena removePlayer(Player p) {
-        return arenaMap.remove(p);
+        if (p == null) {
+            return null;
+        }
+
+        UUID uuid = p.getUniqueId();
+        Arena removed = null;
+
+        for (Player key : new ArrayList<>(arenaMap.keySet())) {
+            if (key != null && key.getUniqueId().equals(uuid)) {
+                removed = arenaMap.remove(key);
+            }
+        }
+
+        return removed;
     }
 
     public void resetArenaMap() {
@@ -199,11 +224,37 @@ public class ArenaMasterImpl implements ArenaMaster
     }
 
     public Arena getArenaWithPlayer(Player p) {
-        return arenaMap.get(p);
+        Arena arena = arenaMap.get(p);
+        if (arena != null) {
+            return arena;
+        }
+
+        if (p == null) {
+            return null;
+        }
+
+        UUID uuid = p.getUniqueId();
+        for (Player key : arenaMap.keySet()) {
+            if (key != null && key.getUniqueId().equals(uuid)) {
+                return arenaMap.get(key);
+            }
+        }
+
+        return null;
     }
 
     public Arena getArenaWithPlayer(String playerName) {
-        return arenaMap.get(plugin.getServer().getPlayer(playerName));
+        Player online = plugin.getServer().getPlayer(playerName);
+        if (online != null) {
+            return getArenaWithPlayer(online);
+        }
+
+        for (Player key : arenaMap.keySet()) {
+            if (key != null && key.getName().equalsIgnoreCase(playerName)) {
+                return arenaMap.get(key);
+            }
+        }
+        return null;
     }
 
     public Arena getArenaWithSpectator(Player p) {

@@ -1,7 +1,9 @@
 package com.garbagemule.MobArena;
 
-import com.garbagemule.MobArena.framework.Arena;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+
+import com.garbagemule.MobArena.framework.Arena;
 
 public class ArenaPlayer
 {
@@ -10,6 +12,8 @@ public class ArenaPlayer
     private ArenaClass arenaClass;
     private ArenaPlayerStatistics stats;
     private boolean isDead;
+    private ItemStack[] savedInventory;
+    private ItemStack[] savedArmor;
 
     //private List<ItemStack> rewards;
     //private List<Block> blocks;
@@ -20,6 +24,10 @@ public class ArenaPlayer
 
     public Player getPlayer() {
         return player;
+    }
+
+    public void setPlayer(Player player) {
+        this.player = player;
     }
 
     public ArenaClass getArenaClass() {
@@ -44,6 +52,16 @@ public class ArenaPlayer
      */
     public void setDead(boolean value) {
         isDead = value;
+    }
+
+    public void saveInventory() {
+        this.savedInventory = player.getInventory().getContents();
+        this.savedArmor = player.getInventory().getArmorContents();
+    }
+
+    public void restoreInventory() {
+        if (savedInventory != null) player.getInventory().setContents(savedInventory);
+        if (savedArmor != null) player.getInventory().setArmorContents(savedArmor);
     }
 
     public void resetStats() {

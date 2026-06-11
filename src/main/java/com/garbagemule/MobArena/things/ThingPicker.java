@@ -1,5 +1,8 @@
 package com.garbagemule.MobArena.things;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Pickers encapsulate a type of highly specific Factory pattern that revolves
  * around choosing from an arbitrary pool of Thing instances without directly
@@ -18,5 +21,17 @@ public interface ThingPicker {
      * @return a {@link Thing} instance, or null
      */
     Thing pick();
+
+    default List<Thing> pickMany(int count) {
+        List<Thing> things = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            things.add(pick());
+        }
+        return things;
+    }
+
+    default List<Thing> pickMany() {
+        return pickMany(1);
+    }
 
 }

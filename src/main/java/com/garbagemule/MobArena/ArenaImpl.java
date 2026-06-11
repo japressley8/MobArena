@@ -1,38 +1,21 @@
 package com.garbagemule.MobArena;
 
-import static com.garbagemule.MobArena.util.config.ConfigUtils.makeSection;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.PriorityBlockingQueue;
+import java.util.logging.Level;
+import java.util.stream.Collectors;
 
-import com.garbagemule.MobArena.ScoreboardManager.NullScoreboardManager;
-import com.garbagemule.MobArena.announce.Announcer;
-import com.garbagemule.MobArena.announce.MessengerAnnouncer;
-import com.garbagemule.MobArena.announce.TitleAnnouncer;
-import com.garbagemule.MobArena.steps.Step;
-import com.garbagemule.MobArena.steps.StepFactory;
-import com.garbagemule.MobArena.steps.PlayerJoinArena;
-import com.garbagemule.MobArena.steps.PlayerSpecArena;
-import com.garbagemule.MobArena.events.ArenaEndEvent;
-import com.garbagemule.MobArena.events.ArenaPlayerDeathEvent;
-import com.garbagemule.MobArena.events.ArenaPlayerJoinEvent;
-import com.garbagemule.MobArena.events.ArenaPlayerLeaveEvent;
-import com.garbagemule.MobArena.events.ArenaPlayerReadyEvent;
-import com.garbagemule.MobArena.events.ArenaStartEvent;
-import com.garbagemule.MobArena.framework.Arena;
-import com.garbagemule.MobArena.leaderboards.Leaderboard;
-import com.garbagemule.MobArena.region.ArenaRegion;
-import com.garbagemule.MobArena.repairable.Repairable;
-import com.garbagemule.MobArena.repairable.RepairableComparator;
-import com.garbagemule.MobArena.repairable.RepairableContainer;
-import com.garbagemule.MobArena.things.InvalidThingInputString;
-import com.garbagemule.MobArena.things.Thing;
-import com.garbagemule.MobArena.things.ThingPicker;
-import com.garbagemule.MobArena.util.ClassChests;
-import com.garbagemule.MobArena.util.Slugs;
-import com.garbagemule.MobArena.util.inventory.InventoryManager;
-import com.garbagemule.MobArena.util.timer.AutoStartTimer;
-import com.garbagemule.MobArena.util.timer.StartDelayTimer;
-import com.garbagemule.MobArena.waves.MABoss;
-import com.garbagemule.MobArena.waves.SheepBouncer;
-import com.garbagemule.MobArena.waves.WaveManager;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
@@ -58,20 +41,39 @@ import org.bukkit.permissions.PermissionAttachment;
 import org.bukkit.permissions.PermissionAttachmentInfo;
 import org.bukkit.potion.PotionEffect;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.PriorityBlockingQueue;
-import java.util.logging.Level;
-import java.util.stream.Collectors;
+import com.garbagemule.MobArena.ScoreboardManager.NullScoreboardManager;
+import com.garbagemule.MobArena.announce.Announcer;
+import com.garbagemule.MobArena.announce.MessengerAnnouncer;
+import com.garbagemule.MobArena.announce.TitleAnnouncer;
+import com.garbagemule.MobArena.events.ArenaEndEvent;
+import com.garbagemule.MobArena.events.ArenaPlayerDeathEvent;
+import com.garbagemule.MobArena.events.ArenaPlayerJoinEvent;
+import com.garbagemule.MobArena.events.ArenaPlayerLeaveEvent;
+import com.garbagemule.MobArena.events.ArenaPlayerReadyEvent;
+import com.garbagemule.MobArena.events.ArenaStartEvent;
+import com.garbagemule.MobArena.framework.Arena;
+import com.garbagemule.MobArena.leaderboards.Leaderboard;
+import com.garbagemule.MobArena.region.ArenaRegion;
+import com.garbagemule.MobArena.repairable.Repairable;
+import com.garbagemule.MobArena.repairable.RepairableComparator;
+import com.garbagemule.MobArena.repairable.RepairableContainer;
+import com.garbagemule.MobArena.steps.PlayerJoinArena;
+import com.garbagemule.MobArena.steps.PlayerSpecArena;
+import com.garbagemule.MobArena.steps.Step;
+import com.garbagemule.MobArena.steps.StepFactory;
+import com.garbagemule.MobArena.things.InvalidThingInputString;
+import com.garbagemule.MobArena.things.PotionEffectThing;
+import com.garbagemule.MobArena.things.Thing;
+import com.garbagemule.MobArena.things.ThingPicker;
+import com.garbagemule.MobArena.util.ClassChests;
+import com.garbagemule.MobArena.util.Slugs;
+import static com.garbagemule.MobArena.util.config.ConfigUtils.makeSection;
+import com.garbagemule.MobArena.util.inventory.InventoryManager;
+import com.garbagemule.MobArena.util.timer.AutoStartTimer;
+import com.garbagemule.MobArena.util.timer.StartDelayTimer;
+import com.garbagemule.MobArena.waves.MABoss;
+import com.garbagemule.MobArena.waves.SheepBouncer;
+import com.garbagemule.MobArena.waves.WaveManager;
 
 public class ArenaImpl implements Arena
 {
@@ -104,6 +106,9 @@ public class ArenaImpl implements Arena
     private Map<Player,ArenaPlayer> arenaPlayerMap;
 
     private Set<Player> arenaPlayers, lobbyPlayers, readyPlayers, specPlayers, deadPlayers;
+    private Set<UUID> offlineArenaPlayers, offlineSpecPlayers;
+    private Set<UUID> sessionDeadPlayers;
+    private Map<UUID, List<EntityType>> offlinePlayerPets;
     private Set<Player> movingPlayers;
     private Set<Player> leavingPlayers;
     private Set<Player> randoms;
@@ -116,6 +121,7 @@ public class ArenaImpl implements Arena
     private PriorityBlockingQueue<Repairable> repairQueue;
     private Set<Block>             blocks;
     private LinkedList<Repairable> repairables, containables;
+    private List<Location> anvilLocations;
 
     // Monster stuff
     private MonsterManager monsterManager;
@@ -177,15 +183,19 @@ public class ArenaImpl implements Arena
         this.leaderboard = new Leaderboard(plugin, this, region.getLeaderboard());
 
         // Player stuff
-        this.arenaPlayerMap = new HashMap<>();
-        this.arenaPlayers   = new HashSet<>();
-        this.lobbyPlayers   = new HashSet<>();
-        this.readyPlayers   = new HashSet<>();
-        this.specPlayers    = new HashSet<>();
-        this.deadPlayers    = new HashSet<>();
-        this.randoms        = new HashSet<>();
-        this.movingPlayers  = new HashSet<>();
-        this.leavingPlayers = new HashSet<>();
+        this.arenaPlayerMap     = new HashMap<>();
+        this.arenaPlayers       = new HashSet<>();
+        this.lobbyPlayers       = new HashSet<>();
+        this.readyPlayers       = new HashSet<>();
+        this.specPlayers        = new HashSet<>();
+        this.deadPlayers        = new HashSet<>();
+        this.offlineArenaPlayers = new HashSet<>();
+        this.offlineSpecPlayers  = new HashSet<>();
+        this.sessionDeadPlayers  = new HashSet<>();
+        this.offlinePlayerPets   = new HashMap<>();
+        this.randoms            = new HashSet<>();
+        this.movingPlayers      = new HashSet<>();
+        this.leavingPlayers    = new HashSet<>();
 
         // Classes, items and permissions
         this.classes      = plugin.getArenaMaster().getClasses();
@@ -198,10 +208,11 @@ public class ArenaImpl implements Arena
         }
 
         // Blocks and pets
-        this.repairQueue  = new PriorityBlockingQueue<>(100, new RepairableComparator());
-        this.blocks       = new HashSet<>();
-        this.repairables  = new LinkedList<>();
-        this.containables = new LinkedList<>();
+        this.repairQueue   = new PriorityBlockingQueue<>(100, new RepairableComparator());
+        this.blocks        = new HashSet<>();
+        this.repairables   = new LinkedList<>();
+        this.containables  = new LinkedList<>();
+        this.anvilLocations = new ArrayList<>();
 
         // Monster stuff
         this.monsterManager = new MonsterManager();
@@ -531,6 +542,7 @@ public class ArenaImpl implements Arena
 
         // Store all chest contents.
         storeContainerContents();
+        storeAnvilLocations();
 
         // Populate arenaPlayers and clear the lobby.
         arenaPlayers.addAll(lobbyPlayers);
@@ -583,6 +595,9 @@ public class ArenaImpl implements Arena
 
             scoreboard.addPlayer(p);
         }
+
+        // Reapply class effects for all players on arena start.
+        reapplyClassEffects();
 
         // Start spawning monsters (must happen before 'running = true;')
         startSpawner();
@@ -719,6 +734,12 @@ public class ArenaImpl implements Arena
     @Override
     public boolean playerJoin(Player p, Location loc)
     {
+        if (sessionDeadPlayers.contains(p.getUniqueId())) {
+            playerSpec(p, loc);
+            messenger.tell(p, org.bukkit.ChatColor.RED + "You are spectating because you either died or left the arena.");
+            return false;
+        }
+
         // Fire the event and check if it's been cancelled.
         ArenaPlayerJoinEvent event = new ArenaPlayerJoinEvent(p, this);
         plugin.getServer().getPluginManager().callEvent(event);
@@ -805,6 +826,11 @@ public class ArenaImpl implements Arena
 
         readyPlayers.add(p);
 
+        if (running) {
+            joinMidGame(p);
+            return;
+        }
+
         int minPlayers = getMinPlayers();
         if (minPlayers > 0 && lobbyPlayers.size() < minPlayers)
         {
@@ -813,6 +839,43 @@ public class ArenaImpl implements Arena
         }
 
         startArena();
+    }
+
+    private void joinMidGame(Player p) {
+        lobbyPlayers.remove(p);
+        readyPlayers.remove(p);
+        arenaPlayers.add(p);
+
+        movingPlayers.add(p);
+        if (arenaWarpOffset > 0.01) {
+            Location warp = region.getArenaWarp();
+            double x = warp.getX() + (arenaWarpOffset * 2 * (Math.random() - 0.5));
+            double y = warp.getY();
+            double z = warp.getZ() + (arenaWarpOffset * 2 * (Math.random() - 0.5));
+            Location offset = new Location(warp.getWorld(), x, y, z);
+            p.teleport(offset);
+        } else {
+            p.teleport(region.getArenaWarp());
+        }
+        
+        addClassPermissions(p);
+        arenaPlayerMap.get(p).resetStats();
+        Thing price = arenaPlayerMap.get(p).getArenaClass().getPrice();
+        if (price != null) {
+            price.takeFrom(p);
+        }
+        scoreboard.addPlayer(p);
+
+        ArenaClass arenaClass = arenaPlayerMap.get(p).getArenaClass();
+        if (arenaClass != null) {
+            removePotionEffects(p);
+            arenaClass.grantPotionEffects(p);
+        }
+
+        spawnsPets.spawn(this);
+        spawnMounts();
+
+        movingPlayers.remove(p);
     }
 
     @Override
@@ -833,6 +896,10 @@ public class ArenaImpl implements Arena
 
         // Remove pets.
         monsterManager.removePets(p);
+
+        if (running && arenaPlayers.contains(p)) {
+            sessionDeadPlayers.add(p.getUniqueId());
+        }
 
         // Clear inventory if player is an arena player, and unmount
         if (arenaPlayers.contains(p)) {
@@ -870,6 +937,171 @@ public class ArenaImpl implements Arena
     }
 
     @Override
+    public void playerDisconnect(Player p) {
+        if (!running) {
+            playerLeave(p);
+            return;
+        }
+
+        if (arenaPlayers.contains(p)) {
+            arenaPlayerMap.get(p).saveInventory();
+            offlineArenaPlayers.add(p.getUniqueId());
+            scoreboard.removePlayer(p);
+
+            Collection<Entity> pets = monsterManager.getPets(p);
+            if (pets != null && !pets.isEmpty()) {
+                List<EntityType> petTypes = new ArrayList<>();
+                for (Entity pet : pets) {
+                    petTypes.add(pet.getType());
+                }
+                offlinePlayerPets.put(p.getUniqueId(), petTypes);
+            }
+
+            monsterManager.removePets(p);
+            removePermissionAttachments(p);
+            removePotionEffects(p);
+        } else if (specPlayers.contains(p) || deadPlayers.contains(p)) {
+            offlineSpecPlayers.add(p.getUniqueId());
+            scoreboard.removePlayer(p);
+        } else {
+            playerLeave(p);
+            return;
+        }
+
+        // Keep the arena player mapping intact so the player can reconnect
+        // with their class and inventory preserved.
+    }
+
+    @Override
+    public void playerReconnect(Player p) {
+        UUID uuid = p.getUniqueId();
+
+        if (!running) {
+            Player oldPlayer = getOldPlayerByUUID(uuid);
+            if (oldPlayer != null) {
+                Step step = histories.remove(oldPlayer);
+                if (step != null) {
+                    step.setPlayer(p);
+                    try {
+                        step.undo();
+                    } catch (Exception e) {
+                        plugin.getLogger().log(Level.SEVERE, () -> "Failed to restore player " + p.getName() + " after arena ended");
+                    }
+                }
+                clearPlayer(oldPlayer);
+                clearPlayer(p);
+                plugin.getArenaMaster().removePlayer(oldPlayer);
+                plugin.getArenaMaster().removePlayer(p);
+            }
+            return;
+        }
+
+        if (offlineArenaPlayers.remove(uuid)) {
+            transferPlayerObject(p);
+            plugin.getArenaMaster().addPlayer(p, this);
+            scoreboard.addPlayer(p);
+            reapplyClassEffects();
+            arenaPlayerMap.get(p).restoreInventory();
+            restorePets(p);
+        } else if (offlineSpecPlayers.remove(uuid)) {
+            transferPlayerObject(p);
+            plugin.getArenaMaster().addPlayer(p, this);
+            playerSpec(p, getRespawnLocation(p));
+        }
+    }
+
+    private void transferPlayerObject(Player newPlayer) {
+        UUID uuid = newPlayer.getUniqueId();
+        Player oldPlayer = getOldPlayerByUUID(uuid);
+
+        if (oldPlayer == null) {
+            return;
+        }
+
+        ArenaPlayer arenaPlayer = arenaPlayerMap.remove(oldPlayer);
+        if (arenaPlayer != null) {
+            arenaPlayer.setPlayer(newPlayer);
+            arenaPlayerMap.put(newPlayer, arenaPlayer);
+        }
+
+        replacePlayerInSet(arenaPlayers, oldPlayer, newPlayer);
+        replacePlayerInSet(lobbyPlayers, oldPlayer, newPlayer);
+        replacePlayerInSet(readyPlayers, oldPlayer, newPlayer);
+        replacePlayerInSet(specPlayers, oldPlayer, newPlayer);
+        replacePlayerInSet(deadPlayers, oldPlayer, newPlayer);
+        replacePlayerInSet(movingPlayers, oldPlayer, newPlayer);
+        replacePlayerInSet(leavingPlayers, oldPlayer, newPlayer);
+
+        replacePlayerInMap(histories, oldPlayer, newPlayer);
+        Step step = histories.get(newPlayer);
+        if (step != null) {
+            step.setPlayer(newPlayer);
+        }
+    }
+
+    private Player getOldPlayerByUUID(UUID uuid) {
+        for (Player p : histories.keySet()) {
+            if (p != null && p.getUniqueId().equals(uuid)) {
+                return p;
+            }
+        }
+        for (Player p : specPlayers) {
+            if (p != null && p.getUniqueId().equals(uuid)) {
+                return p;
+            }
+        }
+        for (Player p : arenaPlayerMap.keySet()) {
+            if (p != null && p.getUniqueId().equals(uuid)) {
+                return p;
+            }
+        }
+        return null;
+    }
+
+    private void restorePets(Player p) {
+        List<EntityType> petTypes = offlinePlayerPets.remove(p.getUniqueId());
+        if (petTypes == null || petTypes.isEmpty()) {
+            return;
+        }
+
+        ArenaClass ac = arenaPlayerMap.get(p).getArenaClass();
+        String petName = (ac != null) ? ac.getPetName() : "";
+
+        for (EntityType type : petTypes) {
+            Class<? extends Entity> clazz = type.getEntityClass();
+            if (clazz == null) continue;
+            Entity pet = world.spawn(p.getLocation(), clazz);
+            if (!petName.isEmpty()) {
+                String resolved = petName
+                    .replace("<player-name>", p.getName())
+                    .replace("<display-name>", p.getDisplayName());
+                String colorized = org.bukkit.ChatColor.translateAlternateColorCodes('&', resolved);
+                pet.setCustomName(colorized);
+                pet.setCustomNameVisible(true);
+            }
+            if (pet instanceof org.bukkit.entity.Tameable) {
+                org.bukkit.entity.Tameable tameable = (org.bukkit.entity.Tameable) pet;
+                tameable.setTamed(true);
+                tameable.setOwner(p);
+            }
+            monsterManager.addPet(p, pet);
+        }
+    }
+
+    private void replacePlayerInSet(Set<Player> set, Player oldPlayer, Player newPlayer) {
+        if (set.remove(oldPlayer)) {
+            set.add(newPlayer);
+        }
+    }
+
+    private void replacePlayerInMap(Map<Player, Step> map, Player oldPlayer, Player newPlayer) {
+        if (map.containsKey(oldPlayer)) {
+            Step step = map.remove(oldPlayer);
+            map.put(newPlayer, step);
+        }
+    }
+
+    @Override
     public boolean isMoving(Player p) {
         return movingPlayers.contains(p) || leavingPlayers.contains(p);
     }
@@ -877,6 +1109,14 @@ public class ArenaImpl implements Arena
     @Override
     public boolean isLeaving(Player p) {
         return leavingPlayers.contains(p);
+    }
+
+    @Override
+    public boolean isTracked(Player p) {
+        UUID uuid = p.getUniqueId();
+        return offlineArenaPlayers.contains(uuid) || 
+               offlineSpecPlayers.contains(uuid) || 
+               getOldPlayerByUUID(uuid) != null;
     }
 
     @Override
@@ -889,6 +1129,8 @@ public class ArenaImpl implements Arena
         // Fire the event
         ArenaPlayerDeathEvent event = new ArenaPlayerDeathEvent(p, this, last);
         plugin.getServer().getPluginManager().callEvent(event);
+
+        sessionDeadPlayers.add(p.getUniqueId());
 
         // Remove pets.
         monsterManager.removePets(p);
@@ -933,6 +1175,7 @@ public class ArenaImpl implements Arena
         removePotionEffects(p);
 
         specPlayers.add(p);
+        p.setGameMode(org.bukkit.GameMode.SPECTATOR);
 
         if (settings.getBoolean("spectate-on-death", true)) {
             // At this point, we know that we want players to become
@@ -976,6 +1219,8 @@ public class ArenaImpl implements Arena
 
         specPlayers.add(p);
         plugin.getArenaMaster().addPlayer(p, this);
+
+        p.setGameMode(org.bukkit.GameMode.SPECTATOR);
 
         messenger.tell(p, Msg.SPEC_PLAYER_SPECTATE);
         movingPlayers.remove(p);
@@ -1140,6 +1385,39 @@ public class ArenaImpl implements Arena
         }
     }
 
+    private void storeAnvilLocations() {
+        anvilLocations.clear();
+        if (!region.isDefined()) {
+            return;
+        }
+
+        int minX = Math.min(region.getP1().getBlockX(), region.getP2().getBlockX());
+        int maxX = Math.max(region.getP1().getBlockX(), region.getP2().getBlockX());
+        int minY = Math.min(region.getP1().getBlockY(), region.getP2().getBlockY());
+        int maxY = Math.max(region.getP1().getBlockY(), region.getP2().getBlockY());
+        int minZ = Math.min(region.getP1().getBlockZ(), region.getP2().getBlockZ());
+        int maxZ = Math.max(region.getP1().getBlockZ(), region.getP2().getBlockZ());
+
+        for (int x = minX; x <= maxX; x++) {
+            for (int y = minY; y <= maxY; y++) {
+                for (int z = minZ; z <= maxZ; z++) {
+                    Location loc = new Location(world, x, y, z);
+                    Material type = world.getBlockAt(loc).getType();
+                    if (type == Material.ANVIL || type == Material.CHIPPED_ANVIL || type == Material.DAMAGED_ANVIL) {
+                        anvilLocations.add(loc);
+                    }
+                }
+            }
+        }
+    }
+
+    private void restoreAnvils() {
+        for (Location loc : anvilLocations) {
+            Block block = world.getBlockAt(loc);
+            block.setType(Material.ANVIL);
+        }
+    }
+
     @Override
     public void discardPlayer(Player p)
     {
@@ -1164,6 +1442,8 @@ public class ArenaImpl implements Arena
         arenaPlayers.remove(p);
         lobbyPlayers.remove(p);
         arenaPlayerMap.remove(p);
+        offlineArenaPlayers.remove(p.getUniqueId());
+        offlineSpecPlayers.remove(p.getUniqueId());
 
         scoreboard.removePlayer(p);
     }
@@ -1373,6 +1653,44 @@ public class ArenaImpl implements Arena
         arenaClass.grantPermissions(player);
     }
 
+    @Override
+    public void reapplyClassEffects() {
+        for (Player player : arenaPlayers) {
+            ArenaPlayer arenaPlayer = arenaPlayerMap.get(player);
+            if (arenaPlayer == null) {
+                continue;
+            }
+            ArenaClass arenaClass = arenaPlayer.getArenaClass();
+            if (arenaClass == null) {
+                continue;
+            }
+            for (Thing thing : arenaClass.getEffects()) {
+                if (thing instanceof PotionEffectThing) {
+                    PotionEffectThing pet = (PotionEffectThing) thing;
+                    PotionEffect classEffect = pet.getEffect();
+                    PotionEffect activeEffect = player.getPotionEffect(classEffect.getType());
+
+                    if (activeEffect != null) {
+                        // If player has the effect at a higher level (amplifier), ignore it
+                        if (activeEffect.getAmplifier() > classEffect.getAmplifier()) {
+                            continue;
+                        }
+
+                        // If player has the effect at the same level (amplifier) AND it is infinite, ignore it
+                        if (activeEffect.getAmplifier() == classEffect.getAmplifier() && activeEffect.isInfinite()) {
+                            continue;
+                        }
+                    }
+
+                    // Otherwise, apply it (overwriting/updating lower level / non-infinite effect of same type)
+                    thing.giveTo(player);
+                } else {
+                    thing.giveTo(player);
+                }
+            }
+        }
+    }
+
     private void removePermissionAttachments(Player player) {
         player.getEffectivePermissions().stream()
             .filter(info -> info.getAttachment() != null)
@@ -1433,6 +1751,10 @@ public class ArenaImpl implements Arena
         arenaPlayerMap.clear();
         lobbyPlayers.clear();
         readyPlayers.clear();
+        offlineArenaPlayers.clear();
+        offlineSpecPlayers.clear();
+        sessionDeadPlayers.clear();
+        offlinePlayerPets.clear();
     }
 
 
@@ -1450,6 +1772,8 @@ public class ArenaImpl implements Arena
 
         for (Repairable r : repairables)
             r.repair();
+
+        restoreAnvils();
     }
 
 
@@ -1600,17 +1924,15 @@ public class ArenaImpl implements Arena
             messenger.tell(p, Msg.JOIN_ARENA_EDIT_MODE);
         else if (arenaPlayers.contains(p) || lobbyPlayers.contains(p))
             messenger.tell(p, Msg.JOIN_ALREADY_PLAYING);
-        else if (running)
-            messenger.tell(p, Msg.JOIN_ARENA_IS_RUNNING);
         else if (!hasPermission(p))
             messenger.tell(p, Msg.JOIN_ARENA_PERMISSION);
-        else if (getMaxPlayers() > 0 && lobbyPlayers.size() >= getMaxPlayers())
+        else if (getMaxPlayers() > 0 && (lobbyPlayers.size() + arenaPlayers.size()) >= getMaxPlayers() && !offlineArenaPlayers.contains(p.getUniqueId()) && !offlineSpecPlayers.contains(p.getUniqueId()))
             messenger.tell(p, Msg.JOIN_PLAYER_LIMIT_REACHED);
         else if (getJoinDistance() > 0 && !region.contains(p.getLocation(), getJoinDistance()))
             messenger.tell(p, Msg.JOIN_TOO_FAR);
-        else if (settings.getBoolean("require-empty-inv-join", true) && !InventoryManager.hasEmptyInventory(p))
+        else if (settings.getBoolean("require-empty-inv-join", true) && !InventoryManager.hasEmptyInventory(p) && !offlineArenaPlayers.contains(p.getUniqueId()))
             messenger.tell(p, Msg.JOIN_EMPTY_INV);
-        else if (!canAfford(p))
+        else if (!canAfford(p) && !offlineArenaPlayers.contains(p.getUniqueId()))
             messenger.tell(p, Msg.JOIN_FEE_REQUIRED, MAUtils.listToString(entryFee, plugin));
         else return true;
 

@@ -1,18 +1,20 @@
 package com.garbagemule.MobArena.waves;
 
-import com.garbagemule.MobArena.framework.Arena;
-import com.garbagemule.MobArena.waves.enums.WaveBranch;
-import com.garbagemule.MobArena.waves.enums.WaveType;
-import org.bukkit.Location;
-import org.bukkit.potion.PotionEffect;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.bukkit.Location;
+import org.bukkit.potion.PotionEffect;
+
+import com.garbagemule.MobArena.framework.Arena;
+import com.garbagemule.MobArena.waves.enums.WaveBranch;
+import com.garbagemule.MobArena.waves.enums.WaveType;
+
 public abstract class AbstractWave implements Wave
 {
     private String name;
+    private String title;
 
     private WaveBranch branch; // recurrent, single
     private WaveType   type;   // default, special, swarm, boss
@@ -58,6 +60,9 @@ public abstract class AbstractWave implements Wave
     @Override
     public void announce(Arena arena, int wave) {
         type.announce(arena, wave);
+        if (title != null && !title.isEmpty()) {
+            arena.announce(title);
+        }
     }
 
     @Override
@@ -68,6 +73,16 @@ public abstract class AbstractWave implements Wave
     @Override
     public void setName(String name) {
         this.name = name;
+    }
+
+    @Override
+    public String getTitle() {
+        return title;
+    }
+
+    @Override
+    public void setTitle(String title) {
+        this.title = title;
     }
 
     @Override

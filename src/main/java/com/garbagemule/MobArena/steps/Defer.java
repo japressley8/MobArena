@@ -26,6 +26,11 @@ class Defer implements Step {
     }
 
     @Override
+    public void setPlayer(org.bukkit.entity.Player player) {
+        step.setPlayer(player);
+    }
+
+    @Override
     public String toString() {
         return "deferred(" + step + ")";
     }

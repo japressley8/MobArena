@@ -3,9 +3,9 @@ package com.garbagemule.MobArena.things;
 import java.util.ArrayList;
 import java.util.List;
 
-class ParserUtil {
+public class ParserUtil {
 
-    static String extractBetween(String s, char left, char right) {
+    public static String extractBetween(String s, char left, char right) {
         int start = s.indexOf(left);
         if (start < 0) {
             throw new IllegalArgumentException("Missing start symbol " + left);
@@ -19,7 +19,7 @@ class ParserUtil {
         return s.substring(start + 1, end).trim();
     }
 
-    static List<String> split(String s) {
+    public static List<String> split(String s) {
         List<String> result = new ArrayList<>();
         int start = 0;
         int parens = 0;

@@ -2,13 +2,18 @@ package com.garbagemule.MobArena.things;
 
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InOrder;
-
-import static org.hamcrest.CoreMatchers.*;
-import static org.hamcrest.MatcherAssert.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 public class ItemStackThingParserTest {
 
@@ -107,7 +112,7 @@ public class ItemStackThingParserTest {
         subject.parse(input);
 
         verify(first).parse(input);
-        verifyZeroInteractions(third);
+        verifyNoInteractions(third);
     }
 
 }

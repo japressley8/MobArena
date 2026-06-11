@@ -25,4 +25,11 @@ public interface Step {
      * method. Doing so is silly.
      */
     void undo();
+
+    /**
+     * Update the player reference for this Step.
+     *
+     * @param player the new Player reference
+     */
+    default void setPlayer(org.bukkit.entity.Player player) {}
 }

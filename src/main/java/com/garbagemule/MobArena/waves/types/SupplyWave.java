@@ -1,18 +1,19 @@
 package com.garbagemule.MobArena.waves.types;
 
-import com.garbagemule.MobArena.framework.Arena;
-import com.garbagemule.MobArena.waves.AbstractWave;
-import com.garbagemule.MobArena.waves.MACreature;
-import com.garbagemule.MobArena.waves.Wave;
-import com.garbagemule.MobArena.waves.enums.WaveType;
-import org.bukkit.inventory.ItemStack;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.SortedMap;
+
+import org.bukkit.inventory.ItemStack;
+
+import com.garbagemule.MobArena.framework.Arena;
+import com.garbagemule.MobArena.waves.AbstractWave;
+import com.garbagemule.MobArena.waves.MACreature;
+import com.garbagemule.MobArena.waves.Wave;
+import com.garbagemule.MobArena.waves.enums.WaveType;
 
 public class SupplyWave extends AbstractWave
 {
@@ -72,6 +73,7 @@ public class SupplyWave extends AbstractWave
         result.setAmountMultiplier(getAmountMultiplier());
         result.setHealthMultiplier(getHealthMultiplier());
         result.setName(getName());
+        result.setTitle(getTitle());
         result.setSpawnpoints(getSpawnpoints());
         result.setEffects(getEffects());
         return result;

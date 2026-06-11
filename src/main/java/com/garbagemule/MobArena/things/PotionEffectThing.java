@@ -3,12 +3,16 @@ package com.garbagemule.MobArena.things;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 
-class PotionEffectThing implements Thing {
+public class PotionEffectThing implements Thing {
 
     private final PotionEffect effect;
 
-    PotionEffectThing(PotionEffect effect) {
+    public PotionEffectThing(PotionEffect effect) {
         this.effect = effect;
+    }
+
+    public PotionEffect getEffect() {
+        return effect;
     }
 
     @Override

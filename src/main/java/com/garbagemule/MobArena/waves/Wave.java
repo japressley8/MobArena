@@ -1,13 +1,14 @@
 package com.garbagemule.MobArena.waves;
 
-import com.garbagemule.MobArena.framework.Arena;
-import com.garbagemule.MobArena.waves.enums.WaveBranch;
-import com.garbagemule.MobArena.waves.enums.WaveType;
+import java.util.List;
+import java.util.Map;
+
 import org.bukkit.Location;
 import org.bukkit.potion.PotionEffect;
 
-import java.util.List;
-import java.util.Map;
+import com.garbagemule.MobArena.framework.Arena;
+import com.garbagemule.MobArena.waves.enums.WaveBranch;
+import com.garbagemule.MobArena.waves.enums.WaveType;
 
 public interface Wave
 {
@@ -75,6 +76,18 @@ public interface Wave
      * @param name a name
      */
     void setName(String name);
+
+    /**
+     * Get the wave's display title.
+     * @return The title shown on wave start, or null
+     */
+    String getTitle();
+
+    /**
+     * Set the wave's display title.
+     * @param title the title shown on wave start
+     */
+    void setTitle(String title);
 
     /**
      * Get the branch type.

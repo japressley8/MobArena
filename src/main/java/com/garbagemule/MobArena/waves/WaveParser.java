@@ -1,13 +1,31 @@
 package com.garbagemule.MobArena.waves;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
+
+import org.bukkit.ChatColor;
+import org.bukkit.Location;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.potion.PotionEffect;
+
 import com.garbagemule.MobArena.ConfigError;
 import com.garbagemule.MobArena.formula.Formula;
 import com.garbagemule.MobArena.framework.Arena;
 import com.garbagemule.MobArena.region.ArenaRegion;
 import com.garbagemule.MobArena.things.InvalidThingInputString;
-import com.garbagemule.MobArena.things.Thing;
-import com.garbagemule.MobArena.things.ThingManager;
+import com.garbagemule.MobArena.things.ParserUtil;
 import com.garbagemule.MobArena.things.ThingPicker;
+import com.garbagemule.MobArena.things.ThingPickerManager;
 import com.garbagemule.MobArena.util.ItemParser;
 import com.garbagemule.MobArena.util.PotionEffectParser;
 import com.garbagemule.MobArena.util.Slugs;
@@ -21,23 +39,6 @@ import com.garbagemule.MobArena.waves.types.SpecialWave;
 import com.garbagemule.MobArena.waves.types.SupplyWave;
 import com.garbagemule.MobArena.waves.types.SwarmWave;
 import com.garbagemule.MobArena.waves.types.UpgradeWave;
-import org.bukkit.ChatColor;
-import org.bukkit.Location;
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.potion.PotionEffect;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.SortedMap;
-import java.util.TreeMap;
-import java.util.TreeSet;
-import java.util.stream.Collectors;
 
 public class WaveParser
 {
@@ -78,6 +79,9 @@ public class WaveParser
         // Prepare the result
         Wave result = null;
 
+        // Parse optional title.
+        String title = config.getString("title", null);
+
         // Switch on the type of wave.
         switch (type) {
             case DEFAULT:
@@ -98,6 +102,10 @@ public class WaveParser
             case BOSS:
                 result = parseBossWave(arena, name, config);
                 break;
+        }
+
+        if (title != null && !title.isEmpty()) {
+            result.setTitle(ChatColor.translateAlternateColorCodes('&', title));
         }
 
         // Grab the branch-specific nodes.
@@ -251,8 +259,8 @@ public class WaveParser
     }
 
     private static Wave parseUpgradeWave(Arena arena, String name, ConfigurationSection config) {
-        ThingManager thingman = arena.getPlugin().getThingManager();
-        Map<String,List<Thing>> upgrades = getUpgradeMap(config, name, arena, thingman);
+        ThingPickerManager pickman = arena.getPlugin().getThingPickerManager();
+        Map<String,List<ThingPicker>> upgrades = getUpgradeMap(config, name, arena, pickman);
 
         return new UpgradeWave(upgrades);
     }
@@ -463,7 +471,7 @@ public class WaveParser
             .collect(Collectors.toList());
     }
 
-    private static Map<String,List<Thing>> getUpgradeMap(ConfigurationSection config, String name, Arena arena, ThingManager thingman) {
+    private static Map<String,List<ThingPicker>> getUpgradeMap(ConfigurationSection config, String name, Arena arena, ThingPickerManager pickman) {
         ConfigurationSection section = config.getConfigurationSection("upgrades");
         if (section == null) {
             throw new ConfigError("Missing 'upgrades' node for wave " + name + " of arena " + arena.configName());
@@ -474,7 +482,7 @@ public class WaveParser
             throw new ConfigError("Empty 'upgrades' node for wave " + name + " of arena " + arena.configName());
         }
 
-        Map<String,List<Thing>> upgrades = new HashMap<>();
+        Map<String,List<ThingPicker>> upgrades = new HashMap<>();
         String path = "upgrades.";
 
         for (String className : classes) {
@@ -483,12 +491,12 @@ public class WaveParser
             // Legacy support
             Object val = config.get(path + className, null);
             if (val instanceof String) {
-                List<Thing> things = loadUpgradesFromString(className, (String) val, name, arena, thingman);
+                List<ThingPicker> things = loadUpgradesFromString(className, (String) val, name, arena, pickman);
                 upgrades.put(slug, things);
             }
             // New complex setup
             else if (val instanceof ConfigurationSection) {
-                List<Thing> list = loadUpgradesFromSection(className, (ConfigurationSection) val, name, arena, thingman);
+                List<ThingPicker> list = loadUpgradesFromSection(className, (ConfigurationSection) val, name, arena, pickman);
                 upgrades.put(slug, list);
             }
         }
@@ -496,22 +504,22 @@ public class WaveParser
         return upgrades;
     }
 
-    private static List<Thing> loadUpgradesFromString(String className, String value, String name, Arena arena, ThingManager thingman) {
+    private static List<ThingPicker> loadUpgradesFromString(String className, String value, String name, Arena arena, ThingPickerManager pickman) {
         if (value == null || value.isEmpty()) {
             return Collections.emptyList();
         }
         try {
-            return Arrays.stream(value.split(","))
+            return ParserUtil.split(value).stream()
                 .map(String::trim)
-                .map(thingman::parse)
+                .map(pickman::parse)
                 .collect(Collectors.toList());
         } catch (InvalidThingInputString e) {
             throw new ConfigError("Failed to parse upgrades for class " + className + " in wave " + name + " of arena " + arena.configName() + ": " + e.getInput());
         }
     }
 
-    private static List<Thing> loadUpgradesFromSection(String className, ConfigurationSection classSection, String name, Arena arena, ThingManager thingman) {
-        List<Thing> list = new ArrayList<>();
+    private static List<ThingPicker> loadUpgradesFromSection(String className, ConfigurationSection classSection, String name, Arena arena, ThingPickerManager pickman) {
+        List<ThingPicker> list = new ArrayList<>();
 
         // Items
         List<String> items = classSection.getStringList("items");
@@ -520,16 +528,16 @@ public class WaveParser
             if (value == null || value.isEmpty()) {
                 items = Collections.emptyList();
             } else {
-                items = Arrays.asList(value.split(","));
+                items = ParserUtil.split(value);
             }
         }
         try {
             items.stream()
                 .map(String::trim)
-                .map(thingman::parse)
+                .map(pickman::parse)
                 .forEach(list::add);
-        } catch (InvalidThingInputString e) {
-            throw new ConfigError("Failed to parse item upgrades for class " + className + " in wave " + name + " of arena " + arena.configName() + ": " + e.getInput());
+        } catch (InvalidThingInputString | IllegalArgumentException e) {
+            throw new ConfigError("Failed to parse item upgrades for class " + className + " in wave " + name + " of arena " + arena.configName() + ": " + e.getMessage());
         }
 
         // Armor
@@ -539,17 +547,17 @@ public class WaveParser
             if (value == null || value.isEmpty()) {
                 armor = Collections.emptyList();
             } else {
-                armor = Arrays.asList(value.split(","));
+                armor = ParserUtil.split(value);
             }
         }
         try {
             // Prepend "armor:" for the armor thing parser
             armor.stream()
                 .map(String::trim)
-                .map(s -> thingman.parse("armor", s))
+                .map(s -> pickman.parse("armor:" + s))
                 .forEach(list::add);
-        } catch (InvalidThingInputString e) {
-            throw new ConfigError("Failed to parse armor upgrades for class " + className + " in wave " + name + " of arena " + arena.configName() + ": " + e.getInput());
+        } catch (InvalidThingInputString | IllegalArgumentException e) {
+            throw new ConfigError("Failed to parse armor upgrades for class " + className + " in wave " + name + " of arena " + arena.configName() + ": " + e.getMessage());
         }
 
         // Effects
@@ -559,26 +567,26 @@ public class WaveParser
             if (value == null || value.isEmpty()) {
                 effects = Collections.emptyList();
             } else {
-                effects = Arrays.asList(value.split(","));
+                effects = ParserUtil.split(value);
             }
         }
         try {
             // Prepend "effect:" for the potion effect thing parser
             effects.stream()
                 .map(String::trim)
-                .map(s -> thingman.parse("effect", s))
+                .map(s -> pickman.parse("effect:" + s))
                 .forEach(list::add);
-        } catch (InvalidThingInputString e) {
-            throw new ConfigError("Failed to parse potion effects for class " + className + " in wave " + name + " of arena " + arena.configName() + ": " + e.getInput());
+        } catch (InvalidThingInputString | IllegalArgumentException e) {
+            throw new ConfigError("Failed to parse potion effects for class " + className + " in wave " + name + " of arena " + arena.configName() + ": " + e.getMessage());
         }
 
         try {
             // Prepend "perm:" for the permission thing parser
             classSection.getStringList("permissions").stream()
-                .map(perm -> thingman.parse("perm", perm))
+                .map(perm -> pickman.parse("perm:" + perm))
                 .forEach(list::add);
-        } catch (InvalidThingInputString e) {
-            throw new ConfigError("Failed to parse permission upgrades for class " + className + " in wave " + name + " of arena " + arena.configName() + ": " + e.getInput());
+        } catch (InvalidThingInputString | IllegalArgumentException e) {
+            throw new ConfigError("Failed to parse permission upgrades for class " + className + " in wave " + name + " of arena " + arena.configName() + ": " + e.getMessage());
         }
 
         return list;

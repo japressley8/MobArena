@@ -1,5 +1,10 @@
 package com.garbagemule.MobArena.waves.types;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
+import java.util.SortedMap;
+
 import com.garbagemule.MobArena.formula.Formula;
 import com.garbagemule.MobArena.formula.Formulas;
 import com.garbagemule.MobArena.framework.Arena;
@@ -7,11 +12,6 @@ import com.garbagemule.MobArena.waves.AbstractWave;
 import com.garbagemule.MobArena.waves.MACreature;
 import com.garbagemule.MobArena.waves.Wave;
 import com.garbagemule.MobArena.waves.enums.WaveType;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
-import java.util.SortedMap;
 
 public class DefaultWave extends AbstractWave
 {
@@ -98,6 +98,7 @@ public class DefaultWave extends AbstractWave
         result.setAmountMultiplier(getAmountMultiplier());
         result.setHealthMultiplier(getHealthMultiplier());
         result.setName(getName());
+        result.setTitle(getTitle());
         result.setSpawnpoints(getSpawnpoints());
         result.setEffects(getEffects());
         return result;

@@ -1,13 +1,8 @@
 package com.garbagemule.MobArena.listeners;
 
-import com.garbagemule.MobArena.MobArena;
-import com.garbagemule.MobArena.PluginVersionCheck;
-import com.garbagemule.MobArena.framework.Arena;
-import com.garbagemule.MobArena.framework.ArenaMaster;
-import com.garbagemule.MobArena.leaderboards.Stats;
-import com.garbagemule.MobArena.util.inventory.InventoryManager;
+import java.util.UUID;
+
 import org.bukkit.ChatColor;
-import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -50,9 +45,12 @@ import org.bukkit.event.vehicle.VehicleExitEvent;
 import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.event.world.WorldUnloadEvent;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import com.garbagemule.MobArena.MobArena;
+import com.garbagemule.MobArena.PluginVersionCheck;
+import com.garbagemule.MobArena.framework.Arena;
+import com.garbagemule.MobArena.framework.ArenaMaster;
+import com.garbagemule.MobArena.leaderboards.Stats;
+import com.garbagemule.MobArena.util.inventory.InventoryManager;
 
 /**
  * The point of this class is to simply redirect all events to each arena's
@@ -298,7 +296,20 @@ public class MAGlobalListener implements Listener
 
     @EventHandler(priority = EventPriority.NORMAL)
     public void playerJoin(PlayerJoinEvent event) {
-        InventoryManager.restoreFromFile(plugin, event.getPlayer());
+        Player p = event.getPlayer();
+        boolean restore = true;
+        for (Arena arena : am.getArenas()) {
+            if (arena.isTracked(p)) {
+                restore = false;
+                break;
+            }
+        }
+        if (restore) {
+            InventoryManager.restoreFromFile(plugin, p);
+        }
+        for (Arena arena : am.getArenas()) {
+            arena.getEventListener().onPlayerJoin(event);
+        }
         if (!am.notifyOnUpdates() || !event.getPlayer().isOp()) return;
 
         UUID id = event.getPlayer().getUniqueId();

@@ -1,5 +1,18 @@
 package com.garbagemule.MobArena;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.World;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitTask;
+
 import com.garbagemule.MobArena.events.ArenaCompleteEvent;
 import com.garbagemule.MobArena.events.NewWaveEvent;
 import com.garbagemule.MobArena.framework.Arena;
@@ -17,18 +30,6 @@ import com.garbagemule.MobArena.waves.enums.WaveType;
 import com.garbagemule.MobArena.waves.types.BossWave;
 import com.garbagemule.MobArena.waves.types.SupplyWave;
 import com.garbagemule.MobArena.waves.types.UpgradeWave;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.World;
-import org.bukkit.attribute.Attribute;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitTask;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 public class MASpawnThread implements Runnable
 {
@@ -105,8 +106,14 @@ public class MASpawnThread implements Runnable
     }
 
     public void run() {
-        // If the arena isn't running or if there are no players in it.
-        if (!arena.isRunning() || arena.getPlayersInArena().isEmpty()) {
+        // If the arena isn't running, stop.
+        if (!arena.isRunning()) {
+            return;
+        }
+
+        // If there are no online players, keep checking until someone reconnects.
+        if (arena.getPlayersInArena().isEmpty()) {
+            arena.scheduleTask(this, 60);
             return;
         }
 
@@ -184,6 +191,7 @@ public class MASpawnThread implements Runnable
         w.announce(arena, wave);
 
         arena.getScoreboard().updateWave(wave);
+        arena.reapplyClassEffects();
 
         // Set the players' level to the wave number
         if (wavesAsLevel) {
@@ -198,6 +206,7 @@ public class MASpawnThread implements Runnable
             return;
         }
 
+        playerCount = Math.max(playerCount, arena.getPlayersInArena().size());
         Map<MACreature, Integer> monsters = w.getMonstersToSpawn(wave, playerCount, arena);
         List<Location> spawnpoints = w.getSpawnpoints(arena);
 
@@ -252,7 +261,8 @@ public class MASpawnThread implements Runnable
                         BossWave bw = (BossWave) w;
                         double maxHealth = bw.getHealth().evaluate(arena);
                         MABoss boss = monsterManager.addBoss(e, maxHealth);
-                        HealthBar healthbar = createsHealthBar.create(e, bw.getBossName());
+                        String bossDisplayName = (bw.getTitle() != null && !bw.getTitle().isEmpty()) ? bw.getTitle() : bw.getBossName();
+                        HealthBar healthbar = createsHealthBar.create(e, bossDisplayName);
                         arena.getPlayersInArena().forEach(healthbar::addPlayer);
                         healthbar.setProgress(1);
                         boss.setHealthBar(healthbar);
@@ -260,8 +270,8 @@ public class MASpawnThread implements Runnable
                         boss.setDrops(bw.getDrops());
                         bw.addMABoss(boss);
                         bw.activateAbilities(arena);
-                        if (bw.getBossName() != null) {
-                            e.setCustomName(bw.getBossName());
+                        if (bossDisplayName != null) {
+                            e.setCustomName(bossDisplayName);
                             e.setCustomNameVisible(true);
                         }
                         break;
@@ -349,9 +359,7 @@ public class MASpawnThread implements Runnable
                 continue;
             }
 
-            arena.getMessenger().tell(p, "Leaving so soon?");
-            p.getInventory().clear();
-            arena.playerLeave(p);
+            p.teleport(region.getArenaWarp());
         }
     }
 

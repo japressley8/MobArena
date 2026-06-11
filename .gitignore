@@ -4,8 +4,18 @@
 # Gradle
 .gradle/
 build/
+build-cli/
 
 # IntelliJ
 .idea/
 *.iml
 out/
+
+# VS Code
+.vscode/
+
+# Eclipse/VS Code Java
+bin/
+
+# Temporary / Output text files
+*.txt

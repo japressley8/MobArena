@@ -1,10 +1,18 @@
 package com.garbagemule.MobArena.waves.types;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.bukkit.inventory.ItemStack;
+
 import com.garbagemule.MobArena.Msg;
 import com.garbagemule.MobArena.formula.Formula;
 import com.garbagemule.MobArena.formula.Formulas;
 import com.garbagemule.MobArena.framework.Arena;
-import com.garbagemule.MobArena.things.Thing;
 import com.garbagemule.MobArena.things.ThingPicker;
 import com.garbagemule.MobArena.waves.AbstractWave;
 import com.garbagemule.MobArena.waves.BossAbilityThread;
@@ -14,14 +22,6 @@ import com.garbagemule.MobArena.waves.Wave;
 import com.garbagemule.MobArena.waves.ability.Ability;
 import com.garbagemule.MobArena.waves.ability.AbilityInfo;
 import com.garbagemule.MobArena.waves.enums.WaveType;
-import org.bukkit.inventory.ItemStack;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 public class BossWave extends AbstractWave
 {
@@ -156,6 +156,7 @@ public class BossWave extends AbstractWave
         result.setAmountMultiplier(getAmountMultiplier());
         result.setHealthMultiplier(getHealthMultiplier());
         result.setName(getName());
+        result.setTitle(getTitle());
         result.setSpawnpoints(getSpawnpoints());
         result.setEffects(getEffects());
         return result;

@@ -1,5 +1,12 @@
 package com.garbagemule.MobArena.commands.user;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
+
 import com.garbagemule.MobArena.MobArena;
 import com.garbagemule.MobArena.Msg;
 import com.garbagemule.MobArena.commands.Command;
@@ -7,12 +14,6 @@ import com.garbagemule.MobArena.commands.CommandInfo;
 import com.garbagemule.MobArena.commands.Commands;
 import com.garbagemule.MobArena.framework.Arena;
 import com.garbagemule.MobArena.framework.ArenaMaster;
-import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @CommandInfo(
     name    = "spec",
@@ -36,7 +37,18 @@ public class SpecCommand implements Command
 
         // Run some rough sanity checks, and grab the arena to spec.
         Arena toArena = Commands.getArenaToJoinOrSpec(am, p, arg1);
-        if (toArena == null || !canSpec(p, toArena)) {
+        if (toArena == null) {
+            return true;
+        }
+
+        if (toArena.isRunning()) {
+            toArena.playerReconnect(p);
+            if (toArena.inArena(p) || toArena.inSpec(p)) {
+                return true;
+            }
+        }
+
+        if (!canSpec(p, toArena)) {
             return true;
         }
 

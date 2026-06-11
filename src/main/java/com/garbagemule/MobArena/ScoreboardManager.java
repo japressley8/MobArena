@@ -1,6 +1,8 @@
 package com.garbagemule.MobArena;
 
-import com.garbagemule.MobArena.framework.Arena;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -9,8 +11,7 @@ import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Score;
 import org.bukkit.scoreboard.Scoreboard;
 
-import java.util.HashMap;
-import java.util.Map;
+import com.garbagemule.MobArena.framework.Arena;
 
 public class ScoreboardManager {
     private static final String DISPLAY_NAME = ChatColor.GREEN + "Kills       " + ChatColor.AQUA + "Wave ";
@@ -42,7 +43,9 @@ public class ScoreboardManager {
          * not wanting to show non-zero scores initially. */
         scoreboards.put(player, player.getScoreboard());
         player.setScoreboard(scoreboard);
-        kills.getScore(player.getName()).setScore(8);
+        Score score = kills.getScore(player.getName());
+        score.setScore(8);
+        arena.scheduleTask(() -> score.setScore(0), 1);
     }
 
     /**

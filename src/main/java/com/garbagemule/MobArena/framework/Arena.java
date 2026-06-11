@@ -1,5 +1,18 @@
 package com.garbagemule.MobArena.framework;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.bukkit.Location;
+import org.bukkit.World;
+import org.bukkit.block.Block;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+
 import com.garbagemule.MobArena.ArenaClass;
 import com.garbagemule.MobArena.ArenaListener;
 import com.garbagemule.MobArena.ArenaPlayer;
@@ -19,18 +32,6 @@ import com.garbagemule.MobArena.things.ThingPicker;
 import com.garbagemule.MobArena.util.inventory.InventoryManager;
 import com.garbagemule.MobArena.util.timer.AutoStartTimer;
 import com.garbagemule.MobArena.waves.WaveManager;
-import org.bukkit.Location;
-import org.bukkit.World;
-import org.bukkit.block.Block;
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
-
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 public interface Arena
 {
@@ -160,6 +161,11 @@ public interface Arena
     void playerReady(Player p);
 
     boolean playerLeave(Player p);
+    void playerDisconnect(Player p);
+
+    void playerReconnect(Player p);
+
+    boolean isTracked(Player p);
 
     boolean isMoving(Player p);
 
@@ -196,6 +202,8 @@ public interface Arena
     void assignClassGiveInv(Player p, String className, ItemStack[] contents);
 
     void addRandomPlayer(Player p);
+
+    void reapplyClassEffects();
 
     void assignRandomClass(Player p);
 

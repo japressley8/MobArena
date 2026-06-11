@@ -79,6 +79,7 @@ import org.bukkit.event.player.PlayerBucketEmptyEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -1294,6 +1295,11 @@ public class ArenaListener
             return;
         }
 
+        if (arena.isRunning() && (arena.inArena(p) || arena.inSpec(p))) {
+            arena.playerDisconnect(p);
+            return;
+        }
+
         arena.playerLeave(p);
         banned.add(p);
         scheduleUnban(p, 20);
@@ -1302,6 +1308,11 @@ public class ArenaListener
     public void onPlayerKick(PlayerKickEvent event) {
         Player p = event.getPlayer();
         if (!arena.isEnabled() || (!arena.inArena(p) && !arena.inLobby(p) && !arena.inSpec(p))) {
+            return;
+        }
+
+        if (arena.isRunning() && (arena.inArena(p) || arena.inSpec(p))) {
+            arena.playerDisconnect(p);
             return;
         }
 
@@ -1389,40 +1400,60 @@ public class ArenaListener
     public void onPlayerCommandPreprocess(PlayerCommandPreprocessEvent event) {
         Player p = event.getPlayer();
 
-        if (event.isCancelled() || (!arena.inArena(p) && !arena.inSpec(p) && !arena.inLobby(p))) {
+        if (event.isCancelled() || (!arena.inArena(p) && !arena.inLobby(p) && !arena.inSpec(p))) {
             return;
         }
 
-        // This is safe, because commands will always have at least one element.
+        String[] args = event.getMessage().trim().split("\\s+");
+        boolean isLeave = false;
+        if (args.length >= 2 && (args[0].equalsIgnoreCase("/ma") || args[0].equalsIgnoreCase("/mobarena"))) {
+            if (args[1].equalsIgnoreCase("leave") || args[1].equalsIgnoreCase("l")) {
+                isLeave = true;
+            }
+        } else if (args.length >= 1 && args[0].equalsIgnoreCase("/leave")) {
+            isLeave = true;
+        }
+
+        if (isLeave) {
+            event.setCancelled(true);
+            if (arena.playerLeave(p)) {
+                Location exit = arena.getRegion().getExitWarp();
+                if (exit != null) {
+                    p.teleport(exit);
+                }
+                arena.getMessenger().tell(p, Msg.LEAVE_PLAYER_LEFT);
+            }
+            return;
+        }
+
+        // Allow commands for players in active arena or lobby.
+        if (arena.inArena(p) || arena.inLobby(p)) {
+            return;
+        }
+
+        // Maintain spectator command restrictions.
         String base = event.getMessage().split(" ")[0].toLowerCase();
 
-        // Check if the entire base command is allowed.
         if (plugin.getArenaMaster().isAllowed(base)) {
             return;
         }
 
-        // If not, check if the specific command is allowed.
         String noslash = event.getMessage().substring(1).toLowerCase();
         if (plugin.getArenaMaster().isAllowed(noslash)) {
             return;
         }
 
-        // This is dirty, but it ensures that commands are indeed blocked.
         event.setMessage("/");
-
-        // Cancel the event regardless.
         event.setCancelled(true);
         arena.getMessenger().tell(p, Msg.MISC_COMMAND_NOT_ALLOWED);
     }
 
     public void onPlayerPreLogin(PlayerLoginEvent event) {
-        Player p = event.getPlayer();
-        if (p == null || !p.isOnline()) return;
+        // No-op. Player reconnect handling is deferred until PlayerJoinEvent.
+    }
 
-        Arena arena = plugin.getArenaMaster().getArenaWithPlayer(p);
-        if (arena == null) return;
-
-        arena.playerLeave(p);
+    public void onPlayerJoin(PlayerJoinEvent event) {
+        arena.playerReconnect(event.getPlayer());
     }
 
     public void onVehicleEnter(VehicleEnterEvent event) {

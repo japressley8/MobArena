@@ -147,6 +147,10 @@ public class ArenaClass
         this.effects = effects;
     }
 
+    public List<Thing> getEffects() {
+        return effects;
+    }
+
     public String getPetName() {
         return this.petName;
     }

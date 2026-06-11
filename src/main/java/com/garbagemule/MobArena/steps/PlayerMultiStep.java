@@ -62,6 +62,14 @@ class PlayerMultiStep extends PlayerStep {
         }
     }
 
+    @Override
+    public void setPlayer(Player player) {
+        super.setPlayer(player);
+        for (Step step : history) {
+            step.setPlayer(player);
+        }
+    }
+
     static StepFactory create(List<StepFactory> factories, Logger logger) {
         return player -> new PlayerMultiStep(player, factories, logger);
     }

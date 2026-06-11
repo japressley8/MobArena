@@ -3,6 +3,7 @@ recurrent:
         type: default
         priority: 1
         frequency: 1
+        title: '&6First Blood'
         monsters:
             zombies: 10
             skeletons: 10
@@ -27,6 +28,7 @@ single:
     boss1:
         type: boss
         wave: 10
+        title: '&cThe Webbed Terror'
         monster: cave_spider
         health: high
         abilities: arrows, root-target, throw-nearby

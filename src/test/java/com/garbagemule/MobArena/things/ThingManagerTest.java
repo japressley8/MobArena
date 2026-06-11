@@ -1,14 +1,18 @@
 package com.garbagemule.MobArena.things;
 
-import com.garbagemule.MobArena.MobArena;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import static org.mockito.ArgumentMatchers.anyString;
 import org.mockito.InOrder;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import com.garbagemule.MobArena.MobArena;
 
 public class ThingManagerTest {
 
@@ -70,7 +74,7 @@ public class ThingManagerTest {
 
         verify(first).parse("thing");
         verify(second).parse("thing");
-        verifyZeroInteractions(third);
+        verifyNoInteractions(third);
     }
 
     @Test

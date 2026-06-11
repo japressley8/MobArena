@@ -1,15 +1,15 @@
 package com.garbagemule.MobArena.waves.types;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
+import java.util.SortedMap;
+
 import com.garbagemule.MobArena.framework.Arena;
 import com.garbagemule.MobArena.waves.AbstractWave;
 import com.garbagemule.MobArena.waves.MACreature;
 import com.garbagemule.MobArena.waves.Wave;
 import com.garbagemule.MobArena.waves.enums.WaveType;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
-import java.util.SortedMap;
 
 public class SpecialWave extends AbstractWave
 {
@@ -60,6 +60,7 @@ public class SpecialWave extends AbstractWave
         result.setAmountMultiplier(getAmountMultiplier());
         result.setHealthMultiplier(getHealthMultiplier());
         result.setName(getName());
+        result.setTitle(getTitle());
         result.setSpawnpoints(getSpawnpoints());
         result.setEffects(getEffects());
         return result;

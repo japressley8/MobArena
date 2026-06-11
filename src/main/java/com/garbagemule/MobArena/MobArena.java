@@ -1,11 +1,23 @@
 package com.garbagemule.MobArena;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.Random;
+import java.util.logging.Level;
+
+import org.bukkit.ChatColor;
+import org.bukkit.configuration.InvalidConfigurationException;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.plugin.PluginManager;
+import org.bukkit.plugin.java.JavaPlugin;
+
 import com.garbagemule.MobArena.commands.CommandHandler;
 import com.garbagemule.MobArena.config.LoadsConfigFile;
-import com.garbagemule.MobArena.finance.Finance;
-import com.garbagemule.MobArena.finance.FinanceFactory;
 import com.garbagemule.MobArena.events.MobArenaPreReloadEvent;
 import com.garbagemule.MobArena.events.MobArenaReloadEvent;
+import com.garbagemule.MobArena.finance.Finance;
+import com.garbagemule.MobArena.finance.FinanceFactory;
 import com.garbagemule.MobArena.formula.FormulaMacros;
 import com.garbagemule.MobArena.formula.FormulaManager;
 import com.garbagemule.MobArena.framework.Arena;
@@ -28,18 +40,6 @@ import com.garbagemule.MobArena.things.ThingManager;
 import com.garbagemule.MobArena.things.ThingPickerManager;
 import com.garbagemule.MobArena.util.config.ConfigUtils;
 import com.garbagemule.MobArena.waves.ability.AbilityManager;
-import org.bstats.bukkit.Metrics;
-import org.bukkit.ChatColor;
-import org.bukkit.configuration.InvalidConfigurationException;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.plugin.PluginManager;
-import org.bukkit.plugin.java.JavaPlugin;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.Random;
-import java.util.logging.Level;
 
 /**
  * MobArena
@@ -156,14 +156,30 @@ public class MobArena extends JavaPlugin
     }
 
     private void setupMetrics() {
-        Metrics metrics = new Metrics(this, 2572);
-        metrics.addCustomChart(new ArenaCountChart(this));
-        metrics.addCustomChart(new ClassCountChart(this));
-        metrics.addCustomChart(new ClassChestsChart(this));
-        metrics.addCustomChart(new FoodRegenChart(this));
-        metrics.addCustomChart(new IsolatedChatChart(this));
-        metrics.addCustomChart(new MonsterInfightChart(this));
-        metrics.addCustomChart(new PvpEnabledChart(this));
+        Class<?> metricsClass;
+        try {
+            metricsClass = Class.forName("org.bstats.bukkit.Metrics");
+        } catch (ClassNotFoundException e) {
+            getLogger().info("bstats is not available, skipping metrics setup.");
+            return;
+        }
+
+        try {
+            Object metrics = metricsClass.getDeclaredConstructor(org.bukkit.plugin.Plugin.class, int.class)
+                .newInstance(this, 2572);
+            Class<?> customChartClass = Class.forName("org.bstats.charts.CustomChart");
+            java.lang.reflect.Method addCustomChart = metricsClass.getMethod("addCustomChart", customChartClass);
+
+            addCustomChart.invoke(metrics, new ArenaCountChart(this));
+            addCustomChart.invoke(metrics, new ClassCountChart(this));
+            addCustomChart.invoke(metrics, new ClassChestsChart(this));
+            addCustomChart.invoke(metrics, new FoodRegenChart(this));
+            addCustomChart.invoke(metrics, new IsolatedChatChart(this));
+            addCustomChart.invoke(metrics, new MonsterInfightChart(this));
+            addCustomChart.invoke(metrics, new PvpEnabledChart(this));
+        } catch (ReflectiveOperationException | IllegalArgumentException | NoClassDefFoundError e) {
+            getLogger().warning("bstats metrics disabled: " + e.getMessage());
+        }
     }
 
     public void reload() {

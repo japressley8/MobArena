@@ -20,10 +20,13 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.InventoryHolder;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -432,7 +435,44 @@ public class ArenaRegion
     }
 
     public Collection<Location> getContainers() {
-        return containers.values();
+        Set<Location> result = new HashSet<>(containers.values());
+        result.addAll(findInventoryHolderLocations());
+        return result;
+    }
+
+    public Location getP1() {
+        return p1;
+    }
+
+    public Location getP2() {
+        return p2;
+    }
+
+    private Collection<Location> findInventoryHolderLocations() {
+        if (!isDefined()) {
+            return Collections.emptySet();
+        }
+
+        Set<Location> result = new HashSet<>();
+        int minX = Math.min(p1.getBlockX(), p2.getBlockX());
+        int maxX = Math.max(p1.getBlockX(), p2.getBlockX());
+        int minY = Math.min(p1.getBlockY(), p2.getBlockY());
+        int maxY = Math.max(p1.getBlockY(), p2.getBlockY());
+        int minZ = Math.min(p1.getBlockZ(), p2.getBlockZ());
+        int maxZ = Math.max(p1.getBlockZ(), p2.getBlockZ());
+
+        for (int x = minX; x <= maxX; x++) {
+            for (int y = minY; y <= maxY; y++) {
+                for (int z = minZ; z <= maxZ; z++) {
+                    Block block = world.getBlockAt(x, y, z);
+                    if (block.getState() instanceof InventoryHolder) {
+                        result.add(block.getLocation());
+                    }
+                }
+            }
+        }
+
+        return result;
     }
 
     public Location getLeaderboard() {
